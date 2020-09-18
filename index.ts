@@ -1,4 +1,6 @@
-import {reduceOnce, prettify, safeParse} from './flurry.ts';
+/// <reference lib="dom" />
+
+import { safeParse, prettify } from './flurry.ts';
 
 console.log('Compilation success!');
 
@@ -14,5 +16,10 @@ const [goE, stepE, resultE] = elements<HTMLElement>(['go', 'step', 'rslt']);
 goE.onclick = _ => {
   const code = codeE.value;
   const parseResult = safeParse(code);
-  console.log(code);
+  if (parseResult.success) {
+    const node = parseResult.value;
+    console.log(prettify(node));
+  } else {
+    console.log(parseResult.error);
+  }
 }

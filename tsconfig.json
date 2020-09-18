@@ -9,6 +9,7 @@
     "jsx": "react",
     "lib": ["dom", "esnext"],
     "target": "esnext",
-    "strict": true
+    "strict": true,
+    "isolatedModules": true
   }
 }

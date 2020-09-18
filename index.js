@@ -446,7 +446,13 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
             goE.onclick = _ => {
                 const code = codeE.value;
                 const parseResult = flurry_ts_1.safeParse(code);
-                console.log(code);
+                if (parseResult.success) {
+                    const node = parseResult.value;
+                    console.log(flurry_ts_1.prettify(node));
+                }
+                else {
+                    console.log(parseResult.error);
+                }
             };
         }
     };
