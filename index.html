@@ -26,12 +26,12 @@ a:hover{text-decoration:underline}
 <textarea id=code rows=2 autofocus></textarea>
 <span>Stdin</span>
 <textarea id=stdin rows=2></textarea>
-<label for=args>Extra args:</label><input id=args type=text value='' title='Extra command line arguments (integers)'><br/>
-<label for=flags>IO flags:</label><input id=flags type=text value='nnn' title='StackOut RetOut Stdin; [i]nteger(s), [b]ytes, [n]one'><br/>
-<label for=redux-limit>Reduction limit:</label><input id=redux-limit type=text value='10000' title='Error if reduction count reaches this limit'>
+<label for=args>Extra args:</label><input id=args type=text value='' title='Extra command line arguments (integers)' disabled><br/>
+<label for=flags>IO flags:</label><input id=flags type=text value='nnn' title='StackOut RetOut Stdin; [i]nteger(s), [b]ytes, [n]one' disabled><br/>
+<label for=redux-limit>Reduction limit:</label><input id=redux-limit type=text value='10000' title='Error if reduction count reaches this limit' disabled>
 <input id=go type=submit value=Run title='Run to completion'><br/>
-<label for=step-count>Step count:</label><input id=step-count type=text value='1' title='Single stepping for debugging'>
-<input id=step type=submit value=Step title='Show reduction steps'>
+<label for=step-count>Step count:</label><input id=step-count type=text value='1' title='Single stepping for debugging' disabled>
+<input id=step type=submit value=Step title='Show reduction steps' disabled>
 <div id=rslt></div>
 <script src=index.js ></script>
 </body>
