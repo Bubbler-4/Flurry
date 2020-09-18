@@ -1,2 +1,9 @@
 image:
-    file: Dockerfile
+  file: Dockerfile
+
+ports:
+  - port: 8080
+
+vscode:
+  extensions:
+    - denoland.vscode-deno@2.2.3:tj2R5tNXGf/IqKS4pDHIkw==

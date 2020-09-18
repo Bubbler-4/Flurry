@@ -1,0 +1,6 @@
+{
+  "deno.enable": true,
+  //"typescript.validate.enable": false,
+  "editor.tabSize": 2,
+  "typescript.tsdk": "/home/gitpod/.nvm/versions/node/v12.18.3/lib/node_modules/typescript/lib"
+}
