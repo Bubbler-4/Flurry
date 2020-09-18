@@ -50,6 +50,10 @@ export function newNode(type : string, child: any) : Node {
   return { type } as Node;
 }
 
+export function intToNode(n : bigint) : Node {
+  return newNode('Num', n);
+}
+
 export function popStack(stack : Node[]) : Node {
   if (stack.length === 0) return newNode('Num', 1n);
   const retNode = stack[stack.length - 1];

@@ -107,6 +107,10 @@ System.register("flurry", [], function (exports_1, context_1) {
         return { type };
     }
     exports_1("newNode", newNode);
+    function intToNode(n) {
+        return newNode('Num', n);
+    }
+    exports_1("intToNode", intToNode);
     function popStack(stack) {
         if (stack.length === 0)
             return newNode('Num', 1n);
@@ -427,15 +431,25 @@ System.register("flurry", [], function (exports_1, context_1) {
 });
 System.register("index", ["flurry"], function (exports_2, context_2) {
     "use strict";
-    var flurry_ts_1, _a, codeE, stdinE, _b, argsE, flagsE, reduxLimitE, stepCountE, _c, goE, stepE, resultE;
+    var flurry_ts_1, flurry_ts_2, _a, codeE, stdinE, _b, argsE, flagsE, reduxLimitE, stepCountE, _c, goE, stepE, resultE;
     var __moduleName = context_2 && context_2.id;
     function elements(ids) {
         return ids.map(id => document.getElementById(id));
+    }
+    function runToEnd(program, init, limit) {
+        const stack = init.map(flurry_ts_1.intToNode);
+        let reduced = true;
+        while (0 < limit && reduced) {
+            [program, reduced] = flurry_ts_2.reduceOnce(program, stack);
+            --limit;
+        }
+        return [program, stack, !reduced];
     }
     return {
         setters: [
             function (flurry_ts_1_1) {
                 flurry_ts_1 = flurry_ts_1_1;
+                flurry_ts_2 = flurry_ts_1_1;
             }
         ],
         execute: function () {
@@ -445,13 +459,27 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
             _c = elements(['go', 'step', 'rslt']), goE = _c[0], stepE = _c[1], resultE = _c[2];
             goE.onclick = _ => {
                 const code = codeE.value;
-                const parseResult = flurry_ts_1.safeParse(code);
+                const parseResult = flurry_ts_2.safeParse(code);
                 if (parseResult.success) {
                     const node = parseResult.value;
-                    console.log(flurry_ts_1.prettify(node));
+                    console.log(flurry_ts_2.prettify(node));
+                    resultE.classList.remove('err');
+                    const [returnVal, stack, isComplete] = runToEnd(node, [], 10000n);
+                    if (isComplete) {
+                        resultE.innerHTML = flurry_ts_2.prettify(returnVal);
+                        console.log(stack.map(flurry_ts_2.prettify));
+                    }
+                    else {
+                        resultE.classList.add('err');
+                        resultE.innerHTML = 'step limit exceeded';
+                        console.log('return:', flurry_ts_2.prettify(returnVal));
+                        console.log('stack:', stack.map(flurry_ts_2.prettify));
+                    }
                 }
                 else {
                     console.log(parseResult.error);
+                    resultE.classList.add('err');
+                    resultE.innerHTML = parseResult.error;
                 }
             };
         }
