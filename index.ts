@@ -27,18 +27,27 @@ function runToEnd(program : Node, init : bigint[], limit : bigint) : [Node, Node
 
 goE.onclick = _ => {
   const code = codeE.value;
+  let reduxLimit : bigint;
+  try {
+    reduxLimit = BigInt(reduxLimitE.value);
+    if (reduxLimit < 0n) throw 'negative';
+  } catch (e) {
+    resultE.classList.add('err');
+    resultE.innerHTML = 'Reduction limit is not a positive integer';
+    return;
+  }
   const parseResult = safeParse(code);
   if (parseResult.success) {
     const node = parseResult.value;
     console.log(prettify(node));
     resultE.classList.remove('err');
-    const [returnVal, stack, isComplete] = runToEnd(node, [], 10000n);
+    const [returnVal, stack, isComplete] = runToEnd(node, [], reduxLimit);
     if (isComplete) {
       resultE.innerHTML = prettify(returnVal);
       console.log(stack.map(prettify));
     } else {
       resultE.classList.add('err');
-      resultE.innerHTML = 'step limit exceeded';
+      resultE.innerHTML = 'Step limit exceeded';
       console.log('return:', prettify(returnVal));
       console.log('stack:', stack.map(prettify));
     }

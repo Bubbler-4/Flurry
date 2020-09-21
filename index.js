@@ -459,19 +459,30 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
             _c = elements(['go', 'step', 'rslt']), goE = _c[0], stepE = _c[1], resultE = _c[2];
             goE.onclick = _ => {
                 const code = codeE.value;
+                let reduxLimit;
+                try {
+                    reduxLimit = BigInt(reduxLimitE.value);
+                    if (reduxLimit < 0n)
+                        throw 'negative';
+                }
+                catch (e) {
+                    resultE.classList.add('err');
+                    resultE.innerHTML = 'Reduction limit is not a positive integer';
+                    return;
+                }
                 const parseResult = flurry_ts_2.safeParse(code);
                 if (parseResult.success) {
                     const node = parseResult.value;
                     console.log(flurry_ts_2.prettify(node));
                     resultE.classList.remove('err');
-                    const [returnVal, stack, isComplete] = runToEnd(node, [], 10000n);
+                    const [returnVal, stack, isComplete] = runToEnd(node, [], reduxLimit);
                     if (isComplete) {
                         resultE.innerHTML = flurry_ts_2.prettify(returnVal);
                         console.log(stack.map(flurry_ts_2.prettify));
                     }
                     else {
                         resultE.classList.add('err');
-                        resultE.innerHTML = 'step limit exceeded';
+                        resultE.innerHTML = 'Step limit exceeded';
                         console.log('return:', flurry_ts_2.prettify(returnVal));
                         console.log('stack:', stack.map(flurry_ts_2.prettify));
                     }
