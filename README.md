@@ -57,6 +57,10 @@ If you have some experience with the Haskell (reference) interpreter, you will f
 * Reduction limit: The interpreter counts the number of reduction steps.
   When it hits the limit, evaluation is aborted and error is printed.
 
+Also, the page has the permalink feature (click the `#` symbol at the top).
+A permalink contains information about all active fields, so anyone clicking the permalink can
+try running the code right away. It also generates a Code Golf.SE post under Output.
+
 ## Differences and enhancements from reference implementation
 
 ### Computed node types and many special-cased reduction rules
