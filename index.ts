@@ -73,7 +73,7 @@ permaE.onclick = () => {
     if (codepoint <= 0xffff) return 3;
     return 4;
   }).reduce((x, y) => x + y, 0);
-  outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry), ${bytes} bytes\n\n`;
+  outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry) \`-${flags}\`, ${bytes} bytes\n\n`;
   outputE.value += '```\n' + code + '\n```\n\n';
   outputE.value += `[Try it online!](${window.location.href})`;
   errorE.value = '';

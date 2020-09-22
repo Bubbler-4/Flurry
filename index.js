@@ -401,7 +401,7 @@ System.register("flurry", [], function (exports_1, context_1) {
     }
     exports_1("left", left);
     function safeParse(source) {
-        const source2 = source.replaceAll(/[^(){}<>\[\]]/g, '');
+        const source2 = source.replace(/[^(){}<>\[\]]/g, '');
         const closing = { '(': ')', '<': '>', '[': ']', '{': '}' };
         const stack = [];
         for (const c of source2) {
@@ -507,7 +507,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                         return 3;
                     return 4;
                 }).reduce((x, y) => x + y, 0);
-                outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry), ${bytes} bytes\n\n`;
+                outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry) \`-${flags}\`, ${bytes} bytes\n\n`;
                 outputE.value += '```\n' + code + '\n```\n\n';
                 outputE.value += `[Try it online!](${window.location.href})`;
                 errorE.value = '';

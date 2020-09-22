@@ -364,7 +364,7 @@ export function left<T,U>(error: U) : Either<T,U> {
 
 export function safeParse(source : string) : Either<Node,string> {
   // Remove any non-brackets
-  const source2 = source.replaceAll(/[^(){}<>\[\]]/g, '');
+  const source2 = source.replace(/[^(){}<>\[\]]/g, '');
   const closing = { '(': ')', '<': '>', '[': ']', '{': '}' };
   const stack : (keyof typeof closing)[] = [];
   for (const c of source2) {
