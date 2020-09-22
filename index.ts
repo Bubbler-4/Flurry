@@ -27,13 +27,40 @@ function runToEnd(program : Node, init : bigint[], limit : bigint) : [Node, Node
 
 goE.onclick = _ => {
   const code = codeE.value;
+  const stdin = stdinE.value;
+  const args = argsE.value;
+  const flags = flagsE.value;
+  if (!/^[ibvn][ivn][ibn]$/.test(flags)) {
+    resultE.classList.add('err');
+    resultE.innerHTML = 'Incorrect flags; should be [ibn][in][ibn]';
+    return;
+  }
+  const initialStack : bigint[] = [];
+  if (flags[2] === 'i') {
+    if (/^\s*(\d+\s*)*$/.test(stdin)) {
+      initialStack.push(...stdin.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
+    } else {
+      resultE.classList.add('err');
+      resultE.innerHTML = 'Incorrect stdin format for integer input mode';
+      return;
+    }
+  } else if (flags[2] === 'b') {
+    initialStack.push(...[...stdin].map(x => BigInt(x.codePointAt(0))));
+  }
+  if (/^\s*(\d+\s*)*$/.test(args)) {
+    initialStack.push(...args.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
+  } else {
+    resultE.classList.add('err');
+    resultE.innerHTML = 'Incorrect extra args format';
+    return;
+  }
   let reduxLimit : bigint;
   try {
     reduxLimit = BigInt(reduxLimitE.value);
     if (reduxLimit < 0n) throw 'negative';
   } catch (e) {
     resultE.classList.add('err');
-    resultE.innerHTML = 'Reduction limit is not a positive integer';
+    resultE.innerHTML = 'Reduction limit is not a non-negative integer';
     return;
   }
   const parseResult = safeParse(code);
@@ -41,18 +68,34 @@ goE.onclick = _ => {
     const node = parseResult.value;
     console.log(prettify(node));
     resultE.classList.remove('err');
-    const [returnVal, stack, isComplete] = runToEnd(node, [], reduxLimit);
+    const [returnVal, stack, isComplete] = runToEnd(node, initialStack, reduxLimit);
     if (isComplete) {
-      resultE.innerHTML = prettify(returnVal);
-      console.log(stack.map(prettify));
+      const stackOut : string[] = [];
+      const retOut : string[] = [];
+      if (flags[0] === 'i') {
+        for (const node of stack) {
+          if (node.type === 'Num') stackOut.push(node.child.toString());
+        }
+      } else if (flags[0] === 'b') {
+        let stackStr = '';
+        for (const node of stack) {
+          if (node.type === 'Num') stackStr += String.fromCodePoint(Number(node.child % 1114111n));
+        }
+        stackOut.push(stackStr);
+      } else if (flags[0] === 'v') {
+        stack.forEach(node => stackOut.push(prettify(node)));
+      }
+      if (flags[1] === 'i') {
+        if (returnVal.type === 'Num') retOut.push(returnVal.child.toString());
+      } else if (flags[1] === 'v') {
+        retOut.push(prettify(returnVal));
+      }
+      resultE.innerHTML = `${stackOut.join(' ')}\n${retOut.join(' ')}`;
     } else {
       resultE.classList.add('err');
-      resultE.innerHTML = 'Step limit exceeded';
-      console.log('return:', prettify(returnVal));
-      console.log('stack:', stack.map(prettify));
+      resultE.innerHTML = `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`;
     }
   } else {
-    console.log(parseResult.error);
     resultE.classList.add('err');
     resultE.innerHTML = parseResult.error;
   }

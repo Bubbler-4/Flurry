@@ -459,6 +459,36 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
             _c = elements(['go', 'step', 'rslt']), goE = _c[0], stepE = _c[1], resultE = _c[2];
             goE.onclick = _ => {
                 const code = codeE.value;
+                const stdin = stdinE.value;
+                const args = argsE.value;
+                const flags = flagsE.value;
+                if (!/^[ibvn][ivn][ibn]$/.test(flags)) {
+                    resultE.classList.add('err');
+                    resultE.innerHTML = 'Incorrect flags; should be [ibn][in][ibn]';
+                    return;
+                }
+                const initialStack = [];
+                if (flags[2] === 'i') {
+                    if (/^\s*(\d+\s*)*$/.test(stdin)) {
+                        initialStack.push(...stdin.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
+                    }
+                    else {
+                        resultE.classList.add('err');
+                        resultE.innerHTML = 'Incorrect stdin format for integer input mode';
+                        return;
+                    }
+                }
+                else if (flags[2] === 'b') {
+                    initialStack.push(...[...stdin].map(x => BigInt(x.codePointAt(0))));
+                }
+                if (/^\s*(\d+\s*)*$/.test(args)) {
+                    initialStack.push(...args.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
+                }
+                else {
+                    resultE.classList.add('err');
+                    resultE.innerHTML = 'Incorrect extra args format';
+                    return;
+                }
                 let reduxLimit;
                 try {
                     reduxLimit = BigInt(reduxLimitE.value);
@@ -467,7 +497,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                 }
                 catch (e) {
                     resultE.classList.add('err');
-                    resultE.innerHTML = 'Reduction limit is not a positive integer';
+                    resultE.innerHTML = 'Reduction limit is not a non-negative integer';
                     return;
                 }
                 const parseResult = flurry_ts_2.safeParse(code);
@@ -475,20 +505,42 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                     const node = parseResult.value;
                     console.log(flurry_ts_2.prettify(node));
                     resultE.classList.remove('err');
-                    const [returnVal, stack, isComplete] = runToEnd(node, [], reduxLimit);
+                    const [returnVal, stack, isComplete] = runToEnd(node, initialStack, reduxLimit);
                     if (isComplete) {
-                        resultE.innerHTML = flurry_ts_2.prettify(returnVal);
-                        console.log(stack.map(flurry_ts_2.prettify));
+                        const stackOut = [];
+                        const retOut = [];
+                        if (flags[0] === 'i') {
+                            for (const node of stack) {
+                                if (node.type === 'Num')
+                                    stackOut.push(node.child.toString());
+                            }
+                        }
+                        else if (flags[0] === 'b') {
+                            let stackStr = '';
+                            for (const node of stack) {
+                                if (node.type === 'Num')
+                                    stackStr += String.fromCodePoint(Number(node.child % 1114111n));
+                            }
+                            stackOut.push(stackStr);
+                        }
+                        else if (flags[0] === 'v') {
+                            stack.forEach(node => stackOut.push(flurry_ts_2.prettify(node)));
+                        }
+                        if (flags[1] === 'i') {
+                            if (returnVal.type === 'Num')
+                                retOut.push(returnVal.child.toString());
+                        }
+                        else if (flags[1] === 'v') {
+                            retOut.push(flurry_ts_2.prettify(returnVal));
+                        }
+                        resultE.innerHTML = `${stackOut.join(' ')}\n${retOut.join(' ')}`;
                     }
                     else {
                         resultE.classList.add('err');
-                        resultE.innerHTML = 'Step limit exceeded';
-                        console.log('return:', flurry_ts_2.prettify(returnVal));
-                        console.log('stack:', stack.map(flurry_ts_2.prettify));
+                        resultE.innerHTML = `Step limit exceeded\nreturn: ${flurry_ts_2.prettify(returnVal)}\nstack: [${stack.map(flurry_ts_2.prettify).join(', ')}]`;
                     }
                 }
                 else {
-                    console.log(parseResult.error);
                     resultE.classList.add('err');
                     resultE.innerHTML = parseResult.error;
                 }
