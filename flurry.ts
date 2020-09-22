@@ -326,7 +326,7 @@ export function prettify(node : Node) : string {
 export function parse(source : string) : Node {
   // just assumes the source code is syntactically correct
   if (source === '') {
-    return newNode('Pop', undefined);
+    return newNode('Num', 1n);
   }
   function prefixParse(source : string) : [Node, string] {
     const closing = { '(': ')', '<': '>', '[': ']', '{': '}' };

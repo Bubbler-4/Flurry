@@ -90,7 +90,7 @@ goE.onclick = _ => {
       } else if (flags[1] === 'v') {
         retOut.push(prettify(returnVal));
       }
-      resultE.innerHTML = `${stackOut.join(' ')}\n${retOut.join(' ')}`;
+      resultE.innerHTML = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
     } else {
       resultE.classList.add('err');
       resultE.innerHTML = `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`;

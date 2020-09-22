@@ -365,7 +365,7 @@ System.register("flurry", [], function (exports_1, context_1) {
     exports_1("prettify", prettify);
     function parse(source) {
         if (source === '') {
-            return newNode('Pop', undefined);
+            return newNode('Num', 1n);
         }
         function prefixParse(source) {
             const closing = { '(': ')', '<': '>', '[': ']', '{': '}' };
@@ -533,7 +533,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                         else if (flags[1] === 'v') {
                             retOut.push(flurry_ts_2.prettify(returnVal));
                         }
-                        resultE.innerHTML = `${stackOut.join(' ')}\n${retOut.join(' ')}`;
+                        resultE.innerHTML = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
                     }
                     else {
                         resultE.classList.add('err');
