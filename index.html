@@ -13,26 +13,30 @@ input{margin:5px 0}
 label{display:inline-block; width:200px}
 a{color:#008;text-decoration:none}
 a:hover{text-decoration:underline}
-#code,#stdin{width:100%;outline:none}
+#code,#stdin,#output,#error{width:100%;outline:none}
 #go,#step{width:64px}
-#rslt{margin-top:16px;white-space:pre}
-#rslt.err{color:red}
+#error{color:red}
 </style></head><body>
 <span>
-  Try <a href='https://github.com/Reconcyl/flurry' title='GitHub'>Flurry</a> Online! <a id=perm href=# title='Permalink'>#</a>
+  Try <a href='https://github.com/Reconcyl/flurry' title='GitHub'>Flurry</a> Online! <a id=perm title='Permalink'>#</a>
 </span>
 <div><p></p></div>
 <span>Code</span>
 <textarea id=code rows=2 autofocus></textarea>
 <span>Stdin</span>
 <textarea id=stdin rows=2></textarea>
+<p>
 <label for=args>Extra args:</label><input id=args type=text value='' title='Extra command line arguments (integers)'><br/>
 <label for=flags>IO flags:</label><input id=flags type=text value='nnn' title='StackOut RetOut Stdin; [i]nteger(s), [b]ytes, [v]erbose, [n]one'><br/>
 <label for=redux-limit>Reduction limit:</label><input id=redux-limit type=text value='10000' title='Error if reduction count reaches this limit'>
 <input id=go type=submit value=Run title='Run to completion'><br/>
 <label for=step-count>Step count:</label><input id=step-count type=text value='1' title='Single stepping for debugging' disabled>
-<input id=step type=submit value=Step title='Show reduction steps' disabled>
-<div id=rslt></div>
+<input id=step type=submit value=Step title='Show reduction steps' disabled></p>
+<span>Output</span>
+<textarea id=output rows=4 readonly></textarea>
+<span>Error</span>
+<textarea id=error rows=4 readonly></textarea>
+<!-- <div id=rslt></div> -->
 <script src=index.js ></script>
 </body>
 </html>

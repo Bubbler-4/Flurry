@@ -9,10 +9,10 @@ function elements<T extends HTMLElement>(ids: string[]) : T[] {
   return ids.map(id => document.getElementById(id) as T);
 }
 
-const [codeE, stdinE] = elements<HTMLTextAreaElement>(['code', 'stdin']);
+const [codeE, stdinE, outputE, errorE] = elements<HTMLTextAreaElement>(['code', 'stdin', 'output', 'error']);
 const [argsE, flagsE, reduxLimitE, stepCountE] =
   elements<HTMLInputElement>(['args', 'flags', 'redux-limit', 'step-count']);
-const [goE, stepE, resultE] = elements<HTMLElement>(['go', 'step', 'rslt']);
+const [goE, stepE, resultE, permaE] = elements<HTMLElement>(['go', 'step', 'rslt', 'perm']);
 
 // returns [returnVal, stack, isComplete]
 function runToEnd(program : Node, init : bigint[], limit : bigint) : [Node, Node[], boolean] {
@@ -25,14 +25,68 @@ function runToEnd(program : Node, init : bigint[], limit : bigint) : [Node, Node
   return [program, stack, !reduced];
 }
 
+function encodeField(s : string) {
+  const codeUnits = new Uint16Array(s.length);
+  for (let i = 0; i < codeUnits.length; i++) {
+    codeUnits[i] = s.charCodeAt(i);
+  }
+  return btoa(String.fromCharCode(...new Uint8Array(codeUnits.buffer)));
+}
+
+function decodeField(b : string) {
+  b = atob(b);
+  const bytes = new Uint8Array(b.length);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = b.charCodeAt(i);
+  }
+  return String.fromCharCode(...new Uint16Array(bytes.buffer));
+}
+
+window.onload = () => {
+  codeE.focus();
+  if (location.hash === '') return;
+  try {
+    const [code, stdin, args, flags, reduxLimit] = location.hash.slice(2).split('#').map(decodeField);
+    codeE.value = code;
+    stdinE.value = stdin;
+    argsE.value = args;
+    flagsE.value = flags;
+    reduxLimitE.value = reduxLimit;
+  } catch (e) {
+    codeE.value = stdinE.value = argsE.value = '';
+    flagsE.value = 'nnn';
+    reduxLimitE.value = '10000';
+  }
+}
+
+permaE.onclick = () => {
+  const code = codeE.value;
+  const stdin = stdinE.value;
+  const args = argsE.value;
+  const flags = flagsE.value;
+  const reduxLimit = reduxLimitE.value;
+  location.hash = '#!' + [code, stdin, args, flags, reduxLimit].map(encodeField).join('#');
+  const bytes = [...code].map(c => {
+    const codepoint = c.codePointAt(0) as number;
+    if (codepoint <= 0x7f) return 1;
+    if (codepoint <= 0x7ff) return 2;
+    if (codepoint <= 0xffff) return 3;
+    return 4;
+  }).reduce((x, y) => x + y, 0);
+  outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry), ${bytes} bytes\n\n`;
+  outputE.value += '```\n' + code + '\n```\n\n';
+  outputE.value += `[Try it online!](${window.location.href})`;
+  errorE.value = '';
+}
+
 goE.onclick = _ => {
+  outputE.value = errorE.value = '';
   const code = codeE.value;
   const stdin = stdinE.value;
   const args = argsE.value;
   const flags = flagsE.value;
   if (!/^[ibvn][ivn][ibn]$/.test(flags)) {
-    resultE.classList.add('err');
-    resultE.innerHTML = 'Incorrect flags; should be [ibn][in][ibn]';
+    errorE.value = 'Incorrect flags; should be [ibvn][ivn][ibn]';
     return;
   }
   const initialStack : bigint[] = [];
@@ -40,8 +94,7 @@ goE.onclick = _ => {
     if (/^\s*(\d+\s*)*$/.test(stdin)) {
       initialStack.push(...stdin.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
     } else {
-      resultE.classList.add('err');
-      resultE.innerHTML = 'Incorrect stdin format for integer input mode';
+      errorE.value = 'Incorrect stdin format for integer input mode';
       return;
     }
   } else if (flags[2] === 'b') {
@@ -50,8 +103,7 @@ goE.onclick = _ => {
   if (/^\s*(\d+\s*)*$/.test(args)) {
     initialStack.push(...args.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
   } else {
-    resultE.classList.add('err');
-    resultE.innerHTML = 'Incorrect extra args format';
+    errorE.value = 'Incorrect extra args format';
     return;
   }
   let reduxLimit : bigint;
@@ -59,15 +111,12 @@ goE.onclick = _ => {
     reduxLimit = BigInt(reduxLimitE.value);
     if (reduxLimit < 0n) throw 'negative';
   } catch (e) {
-    resultE.classList.add('err');
-    resultE.innerHTML = 'Reduction limit is not a non-negative integer';
+    errorE.value = 'Reduction limit is not a non-negative integer';
     return;
   }
   const parseResult = safeParse(code);
   if (parseResult.success) {
     const node = parseResult.value;
-    console.log(prettify(node));
-    resultE.classList.remove('err');
     const [returnVal, stack, isComplete] = runToEnd(node, initialStack, reduxLimit);
     if (isComplete) {
       const stackOut : string[] = [];
@@ -90,13 +139,11 @@ goE.onclick = _ => {
       } else if (flags[1] === 'v') {
         retOut.push(prettify(returnVal));
       }
-      resultE.innerHTML = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
+      outputE.value = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
     } else {
-      resultE.classList.add('err');
-      resultE.innerHTML = `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`;
+      errorE.value = `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`;
     }
   } else {
-    resultE.classList.add('err');
-    resultE.innerHTML = parseResult.error;
+    errorE.value = parseResult.error;
   }
 }

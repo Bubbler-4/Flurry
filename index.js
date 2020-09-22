@@ -431,7 +431,7 @@ System.register("flurry", [], function (exports_1, context_1) {
 });
 System.register("index", ["flurry"], function (exports_2, context_2) {
     "use strict";
-    var flurry_ts_1, flurry_ts_2, _a, codeE, stdinE, _b, argsE, flagsE, reduxLimitE, stepCountE, _c, goE, stepE, resultE;
+    var flurry_ts_1, flurry_ts_2, _a, codeE, stdinE, outputE, errorE, _b, argsE, flagsE, reduxLimitE, stepCountE, _c, goE, stepE, resultE, permaE;
     var __moduleName = context_2 && context_2.id;
     function elements(ids) {
         return ids.map(id => document.getElementById(id));
@@ -445,6 +445,21 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
         }
         return [program, stack, !reduced];
     }
+    function encodeField(s) {
+        const codeUnits = new Uint16Array(s.length);
+        for (let i = 0; i < codeUnits.length; i++) {
+            codeUnits[i] = s.charCodeAt(i);
+        }
+        return btoa(String.fromCharCode(...new Uint8Array(codeUnits.buffer)));
+    }
+    function decodeField(b) {
+        b = atob(b);
+        const bytes = new Uint8Array(b.length);
+        for (let i = 0; i < bytes.length; i++) {
+            bytes[i] = b.charCodeAt(i);
+        }
+        return String.fromCharCode(...new Uint16Array(bytes.buffer));
+    }
     return {
         setters: [
             function (flurry_ts_1_1) {
@@ -454,17 +469,57 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
         ],
         execute: function () {
             console.log('Compilation success!');
-            _a = elements(['code', 'stdin']), codeE = _a[0], stdinE = _a[1];
+            _a = elements(['code', 'stdin', 'output', 'error']), codeE = _a[0], stdinE = _a[1], outputE = _a[2], errorE = _a[3];
             _b = elements(['args', 'flags', 'redux-limit', 'step-count']), argsE = _b[0], flagsE = _b[1], reduxLimitE = _b[2], stepCountE = _b[3];
-            _c = elements(['go', 'step', 'rslt']), goE = _c[0], stepE = _c[1], resultE = _c[2];
+            _c = elements(['go', 'step', 'rslt', 'perm']), goE = _c[0], stepE = _c[1], resultE = _c[2], permaE = _c[3];
+            window.onload = () => {
+                codeE.focus();
+                if (location.hash === '')
+                    return;
+                try {
+                    const [code, stdin, args, flags, reduxLimit] = location.hash.slice(2).split('#').map(decodeField);
+                    codeE.value = code;
+                    stdinE.value = stdin;
+                    argsE.value = args;
+                    flagsE.value = flags;
+                    reduxLimitE.value = reduxLimit;
+                }
+                catch (e) {
+                    codeE.value = stdinE.value = argsE.value = '';
+                    flagsE.value = 'nnn';
+                    reduxLimitE.value = '10000';
+                }
+            };
+            permaE.onclick = () => {
+                const code = codeE.value;
+                const stdin = stdinE.value;
+                const args = argsE.value;
+                const flags = flagsE.value;
+                const reduxLimit = reduxLimitE.value;
+                location.hash = '#!' + [code, stdin, args, flags, reduxLimit].map(encodeField).join('#');
+                const bytes = [...code].map(c => {
+                    const codepoint = c.codePointAt(0);
+                    if (codepoint <= 0x7f)
+                        return 1;
+                    if (codepoint <= 0x7ff)
+                        return 2;
+                    if (codepoint <= 0xffff)
+                        return 3;
+                    return 4;
+                }).reduce((x, y) => x + y, 0);
+                outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry), ${bytes} bytes\n\n`;
+                outputE.value += '```\n' + code + '\n```\n\n';
+                outputE.value += `[Try it online!](${window.location.href})`;
+                errorE.value = '';
+            };
             goE.onclick = _ => {
+                outputE.value = errorE.value = '';
                 const code = codeE.value;
                 const stdin = stdinE.value;
                 const args = argsE.value;
                 const flags = flagsE.value;
                 if (!/^[ibvn][ivn][ibn]$/.test(flags)) {
-                    resultE.classList.add('err');
-                    resultE.innerHTML = 'Incorrect flags; should be [ibn][in][ibn]';
+                    errorE.value = 'Incorrect flags; should be [ibvn][ivn][ibn]';
                     return;
                 }
                 const initialStack = [];
@@ -473,8 +528,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                         initialStack.push(...stdin.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
                     }
                     else {
-                        resultE.classList.add('err');
-                        resultE.innerHTML = 'Incorrect stdin format for integer input mode';
+                        errorE.value = 'Incorrect stdin format for integer input mode';
                         return;
                     }
                 }
@@ -485,8 +539,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                     initialStack.push(...args.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
                 }
                 else {
-                    resultE.classList.add('err');
-                    resultE.innerHTML = 'Incorrect extra args format';
+                    errorE.value = 'Incorrect extra args format';
                     return;
                 }
                 let reduxLimit;
@@ -496,15 +549,12 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                         throw 'negative';
                 }
                 catch (e) {
-                    resultE.classList.add('err');
-                    resultE.innerHTML = 'Reduction limit is not a non-negative integer';
+                    errorE.value = 'Reduction limit is not a non-negative integer';
                     return;
                 }
                 const parseResult = flurry_ts_2.safeParse(code);
                 if (parseResult.success) {
                     const node = parseResult.value;
-                    console.log(flurry_ts_2.prettify(node));
-                    resultE.classList.remove('err');
                     const [returnVal, stack, isComplete] = runToEnd(node, initialStack, reduxLimit);
                     if (isComplete) {
                         const stackOut = [];
@@ -533,16 +583,14 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                         else if (flags[1] === 'v') {
                             retOut.push(flurry_ts_2.prettify(returnVal));
                         }
-                        resultE.innerHTML = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
+                        outputE.value = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
                     }
                     else {
-                        resultE.classList.add('err');
-                        resultE.innerHTML = `Step limit exceeded\nreturn: ${flurry_ts_2.prettify(returnVal)}\nstack: [${stack.map(flurry_ts_2.prettify).join(', ')}]`;
+                        errorE.value = `Step limit exceeded\nreturn: ${flurry_ts_2.prettify(returnVal)}\nstack: [${stack.map(flurry_ts_2.prettify).join(', ')}]`;
                     }
                 }
                 else {
-                    resultE.classList.add('err');
-                    resultE.innerHTML = parseResult.error;
+                    errorE.value = parseResult.error;
                 }
             };
         }
