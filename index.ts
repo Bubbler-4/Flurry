@@ -88,23 +88,22 @@ permaE.onclick = () => {
   errorE.value = '';
 }
 
-goE.onclick = _ => {
-  outputE.value = errorE.value = '';
-  const code = codeE.value;
-  const stdin = stdinE.value;
-  const args = argsE.value;
-  const flags = flagsE.value;
+// Takes all active fields and returns [output, error]
+function runInterpreter(code : string, stdin : string, args : string, flags : string, reduxLimitS : string) : [string, string] {
+  //outputE.value = errorE.value = '';
+  //const code = codeE.value;
+  //const stdin = stdinE.value;
+  //const args = argsE.value;
+  //const flags = flagsE.value;
   if (!/^[ibvn][ivn][ibn]$/.test(flags)) {
-    errorE.value = 'Incorrect flags; should be [ibvn][ivn][ibn]';
-    return;
+    return ['', 'Incorrect flags; should be [ibvn][ivn][ibn]'];
   }
   const initialStack : bigint[] = [];
   if (flags[2] === 'i') {
     if (/^\s*(\d+\s*)*$/.test(stdin)) {
       initialStack.push(...stdin.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
     } else {
-      errorE.value = 'Incorrect stdin format for integer input mode';
-      return;
+      return ['', 'Incorrect stdin format for integer input mode'];
     }
   } else if (flags[2] === 'b') {
     initialStack.push(...[...stdin].map(x => BigInt(x.codePointAt(0))));
@@ -112,16 +111,14 @@ goE.onclick = _ => {
   if (/^\s*(\d+\s*)*$/.test(args)) {
     initialStack.push(...args.trim().split(/\s+/).filter(x => x !== '').map(BigInt));
   } else {
-    errorE.value = 'Incorrect extra args format';
-    return;
+    return ['', 'Incorrect extra args format'];
   }
   let reduxLimit : bigint;
   try {
-    reduxLimit = BigInt(reduxLimitE.value);
+    reduxLimit = BigInt(reduxLimitS);
     if (reduxLimit < 0n) throw 'negative';
   } catch (e) {
-    errorE.value = 'Reduction limit is not a non-negative integer';
-    return;
+    return ['', 'Reduction limit is not a non-negative integer'];
   }
   const parseResult = safeParse(code);
   if (parseResult.success) {
@@ -148,11 +145,20 @@ goE.onclick = _ => {
       } else if (flags[1] === 'v') {
         retOut.push(prettify(returnVal));
       }
-      outputE.value = `${stackOut.join(' ') + (/[nb]/.test(flags[0]) ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
+      return [`${stackOut.join(' ') + (/[nb]/.test(flags[0]) ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`, ''];
     } else {
-      errorE.value = `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`;
+      return ['', `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`];
     }
   } else {
-    errorE.value = parseResult.error;
+    return ['', parseResult.error];
   }
+}
+
+goE.onclick = _ => {
+  const code = codeE.value;
+  const stdin = stdinE.value;
+  const args = argsE.value;
+  const flags = flagsE.value;
+  const reduxLimitS = reduxLimitE.value;
+  [outputE.value, errorE.value] = runInterpreter(code, stdin, args, flags, reduxLimitS);
 }
