@@ -12,7 +12,7 @@ function elements<T extends HTMLElement>(ids: string[]) : T[] {
 const [codeE, stdinE, outputE, errorE] = elements<HTMLTextAreaElement>(['code', 'stdin', 'output', 'error']);
 const [argsE, flagsE, reduxLimitE, stepCountE] =
   elements<HTMLInputElement>(['args', 'flags', 'redux-limit', 'step-count']);
-const [goE, stepE, resultE, permaE] = elements<HTMLElement>(['go', 'step', 'rslt', 'perm']);
+const [goE, stepE, resultE, permaE, bytesE] = elements<HTMLElement>(['go', 'step', 'rslt', 'perm', 'bytes']);
 
 // returns [returnVal, stack, isComplete]
 function runToEnd(program : Node, init : bigint[], limit : bigint) : [Node, Node[], boolean] {
@@ -42,6 +42,16 @@ function decodeField(b : string) {
   return String.fromCharCode(...new Uint16Array(bytes.buffer));
 }
 
+function byteCount(s : string) {
+  return [...s].map(c => {
+    const codepoint = c.codePointAt(0) as number;
+    if (codepoint <= 0x7f) return 1;
+    if (codepoint <= 0x7ff) return 2;
+    if (codepoint <= 0xffff) return 3;
+    return 4;
+  }).reduce((x, y) => x + y, 0);
+}
+
 window.onload = () => {
   codeE.focus();
   if (location.hash === '') return;
@@ -59,6 +69,10 @@ window.onload = () => {
   }
 }
 
+codeE.oninput = () => {
+  bytesE.innerHTML = byteCount(codeE.value).toString();
+}
+
 permaE.onclick = () => {
   const code = codeE.value;
   const stdin = stdinE.value;
@@ -66,13 +80,7 @@ permaE.onclick = () => {
   const flags = flagsE.value;
   const reduxLimit = reduxLimitE.value;
   location.hash = '#!' + [code, stdin, args, flags, reduxLimit].map(encodeField).join('#');
-  const bytes = [...code].map(c => {
-    const codepoint = c.codePointAt(0) as number;
-    if (codepoint <= 0x7f) return 1;
-    if (codepoint <= 0x7ff) return 2;
-    if (codepoint <= 0xffff) return 3;
-    return 4;
-  }).reduce((x, y) => x + y, 0);
+  const bytes = byteCount(code);
   outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry) \`-${flags}\`, ${bytes} bytes\n\n`;
   outputE.value += '```\n' + code + '\n```\n\n';
   outputE.value += `[Try it online!](${window.location.href})`;
@@ -139,7 +147,7 @@ goE.onclick = _ => {
       } else if (flags[1] === 'v') {
         retOut.push(prettify(returnVal));
       }
-      outputE.value = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
+      outputE.value = `${stackOut.join(' ') + (/[nb]/.test(flags[0]) ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
     } else {
       errorE.value = `Step limit exceeded\nreturn: ${prettify(returnVal)}\nstack: [${stack.map(prettify).join(', ')}]`;
     }

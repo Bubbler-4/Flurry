@@ -431,7 +431,7 @@ System.register("flurry", [], function (exports_1, context_1) {
 });
 System.register("index", ["flurry"], function (exports_2, context_2) {
     "use strict";
-    var flurry_ts_1, flurry_ts_2, _a, codeE, stdinE, outputE, errorE, _b, argsE, flagsE, reduxLimitE, stepCountE, _c, goE, stepE, resultE, permaE;
+    var flurry_ts_1, flurry_ts_2, _a, codeE, stdinE, outputE, errorE, _b, argsE, flagsE, reduxLimitE, stepCountE, _c, goE, stepE, resultE, permaE, bytesE;
     var __moduleName = context_2 && context_2.id;
     function elements(ids) {
         return ids.map(id => document.getElementById(id));
@@ -460,6 +460,18 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
         }
         return String.fromCharCode(...new Uint16Array(bytes.buffer));
     }
+    function byteCount(s) {
+        return [...s].map(c => {
+            const codepoint = c.codePointAt(0);
+            if (codepoint <= 0x7f)
+                return 1;
+            if (codepoint <= 0x7ff)
+                return 2;
+            if (codepoint <= 0xffff)
+                return 3;
+            return 4;
+        }).reduce((x, y) => x + y, 0);
+    }
     return {
         setters: [
             function (flurry_ts_1_1) {
@@ -471,7 +483,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
             console.log('Compilation success!');
             _a = elements(['code', 'stdin', 'output', 'error']), codeE = _a[0], stdinE = _a[1], outputE = _a[2], errorE = _a[3];
             _b = elements(['args', 'flags', 'redux-limit', 'step-count']), argsE = _b[0], flagsE = _b[1], reduxLimitE = _b[2], stepCountE = _b[3];
-            _c = elements(['go', 'step', 'rslt', 'perm']), goE = _c[0], stepE = _c[1], resultE = _c[2], permaE = _c[3];
+            _c = elements(['go', 'step', 'rslt', 'perm', 'bytes']), goE = _c[0], stepE = _c[1], resultE = _c[2], permaE = _c[3], bytesE = _c[4];
             window.onload = () => {
                 codeE.focus();
                 if (location.hash === '')
@@ -490,6 +502,9 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                     reduxLimitE.value = '10000';
                 }
             };
+            codeE.oninput = () => {
+                bytesE.innerHTML = byteCount(codeE.value).toString();
+            };
             permaE.onclick = () => {
                 const code = codeE.value;
                 const stdin = stdinE.value;
@@ -497,16 +512,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                 const flags = flagsE.value;
                 const reduxLimit = reduxLimitE.value;
                 location.hash = '#!' + [code, stdin, args, flags, reduxLimit].map(encodeField).join('#');
-                const bytes = [...code].map(c => {
-                    const codepoint = c.codePointAt(0);
-                    if (codepoint <= 0x7f)
-                        return 1;
-                    if (codepoint <= 0x7ff)
-                        return 2;
-                    if (codepoint <= 0xffff)
-                        return 3;
-                    return 4;
-                }).reduce((x, y) => x + y, 0);
+                const bytes = byteCount(code);
                 outputE.value = `# [Flurry](https://github.com/Reconcyl/flurry) \`-${flags}\`, ${bytes} bytes\n\n`;
                 outputE.value += '```\n' + code + '\n```\n\n';
                 outputE.value += `[Try it online!](${window.location.href})`;
@@ -583,7 +589,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                         else if (flags[1] === 'v') {
                             retOut.push(flurry_ts_2.prettify(returnVal));
                         }
-                        outputE.value = `${stackOut.join(' ') + (flags[0] === 'n' ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
+                        outputE.value = `${stackOut.join(' ') + (/[nb]/.test(flags[0]) ? '' : '\n')}${retOut.join(' ') + (flags[1] === 'n' ? '' : '\n')}`;
                     }
                     else {
                         errorE.value = `Step limit exceeded\nreturn: ${flurry_ts_2.prettify(returnVal)}\nstack: [${stack.map(flurry_ts_2.prettify).join(', ')}]`;
