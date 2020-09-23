@@ -67,6 +67,7 @@ window.onload = () => {
     flagsE.value = 'nnn';
     reduxLimitE.value = '10000';
   }
+  bytesE.innerHTML = byteCount(codeE.value).toString();
 }
 
 codeE.oninput = () => {

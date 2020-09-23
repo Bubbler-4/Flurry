@@ -501,6 +501,7 @@ System.register("index", ["flurry"], function (exports_2, context_2) {
                     flagsE.value = 'nnn';
                     reduxLimitE.value = '10000';
                 }
+                bytesE.innerHTML = byteCount(codeE.value).toString();
             };
             codeE.oninput = () => {
                 bytesE.innerHTML = byteCount(codeE.value).toString();
