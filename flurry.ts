@@ -116,8 +116,10 @@ export function reduceOnce(node : Node, stack : Node[]) : [Node, boolean] {
             nodes.push(newNode('Num', lastNode.child * node.child));
             return nodes;
           } else if (lastNode.type === 'Num' && lastNode.child === 0n) {
+            nodes.push(lastNode);
             return nodes;
           } else if (node.type === 'Num' && node.child === 1n) {
+            nodes.push(node);
             return nodes;
           } else {
             nodes.push(lastNode);
